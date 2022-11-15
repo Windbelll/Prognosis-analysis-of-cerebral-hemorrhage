@@ -25,6 +25,8 @@ def run(file_path):
         key = waitKey(10)
         if key & 0xFF == ord('q'):
             break
+        if key & 0xFF == ord('s'):
+            imwrite("./sample/sample_dcm.png", img)
 
 
 if __name__ == "__main__":
