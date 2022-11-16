@@ -6,6 +6,8 @@ import numpy as np
 import png
 import time
 
+import yaml
+
 
 def ConvertAllDCMs(file_path, width, level):
     """
@@ -17,7 +19,7 @@ def ConvertAllDCMs(file_path, width, level):
     names_with_gcs = os.listdir(file_path)
     for name in names_with_gcs:
         all_image_names = []
-
+        output_name = name[:12].replace(' ','_')
         # cd to dcm dir
         temp_path = file_path + "/" + name
         temp_names = os.listdir(temp_path)
@@ -31,8 +33,8 @@ def ConvertAllDCMs(file_path, width, level):
         names = os.listdir(temp_path)
         if len(names) == 0:
             continue
-        if not os.path.exists("./output/" + name):
-            os.mkdir("./output/" + name)
+        if not os.path.exists("./output/" + output_name):
+            os.mkdir("./output/" + output_name)
 
         for image_name in names:
             index = image_name.rfind('.')
@@ -46,13 +48,15 @@ def ConvertAllDCMs(file_path, width, level):
             start_time = time.perf_counter()
             # set src/dst path
             src_path = temp_path + "/" + image_name + ".dcm"
-            dst_path = "./output/" + name + "/" + image_name + ".png"
+            dst_path = "./output/" + output_name + "/" + str(index) + ".png"
 
             dst = convert_dcm(src_path, width, level)
             w = png.Writer(dst.shape[1], dst.shape[0], greyscale=True)
             object_file = open(dst_path, 'wb')
             w.write(object_file, dst)
-            print("process: " + name + "(%d/%d)" % (index, total), "(%.2fms)" % ((time.perf_counter() - start_time) * 1000))
+            print("process: " + name + "(%d/%d)" % (index, total),
+                  "(%.2fms)" % ((time.perf_counter() - start_time) * 1000))
+        exit(0)
 
 
 def convert_dcm(src_path, width, level):
@@ -70,7 +74,7 @@ def convert_dcm(src_path, width, level):
     min_val = (2 * window_level - window_width) / 2.0 + 0.5
     max_val = (2 * window_level + window_width) / 2.0 + 0.5
     dst_image = (src - min_val) * 255.0 / float(max_val - min_val)
-    dst_image = np.int8(dst_image)
+    dst_image = np.uint8(dst_image)
     return dst_image
 
 
@@ -79,8 +83,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="for test, written by Windbell")
     parser.add_argument("--input_path", default="C:/Users/49804/Desktop/文章/大三/创新实践/预后不良/预后不良",
                         help="the dir to (here)/patient_name_gcs_etc")
+    parser.add_argument('-y', '--yaml', default=True, help="use yaml to load hyps")
     parser.add_argument("--window_level", type=int, default=50, help="the level in W/L algorithm in CT")
     parser.add_argument("--window_width", type=int, default=100, help="the width in W/L algorithm in CT")
     args = parser.parse_args()
     print(args)
-    ConvertAllDCMs(args.input_path, args.window_width, args.window_level)
+    if args.yaml:
+        with open("./settings/test.yaml", "r") as ff:
+            setting = yaml.load(ff, Loader=yaml.FullLoader)
+        print("use yaml: window_width = " + str(setting['window_width']) + "   window_level = "
+              + str(setting['window_level']))
+        ConvertAllDCMs(args.input_path, int(setting['window_width']), int(setting['window_level']))
+    else:
+        ConvertAllDCMs(args.input_path, args.window_width, args.window_level)
