@@ -24,11 +24,12 @@ def run(file_path, yaml_path):
     with open("./settings/default.yaml", "r") as ff:
         setting = yaml.load(ff, Loader=yaml.FullLoader)
 
-    createTrackbar("window_width", "preview", setting['window_width'], 200, callback)
+    createTrackbar("window_width", "preview", setting['window_width'], 500, callback)
     createTrackbar("window_level", "preview", setting['window_level'], 200, callback)
     createTrackbar("threshold", "division", setting['threshold'], 255, callback)
     while True:
         width = getTrackbarPos("window_width", "preview")
+        print(width)
         level = getTrackbarPos("window_level", "preview")
         threshold_m = int(getTrackbarPos("threshold", "division"))
         img = convert_dcm(file_path, width, level)

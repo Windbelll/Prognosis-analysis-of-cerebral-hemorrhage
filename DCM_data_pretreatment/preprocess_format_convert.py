@@ -56,7 +56,6 @@ def ConvertAllDCMs(file_path, width, level):
             w.write(object_file, dst)
             print("process: " + name + "(%d/%d)" % (index, total),
                   "(%.2fms)" % ((time.perf_counter() - start_time) * 1000))
-        exit(0)
 
 
 def convert_dcm(src_path, width, level):
@@ -66,9 +65,19 @@ def convert_dcm(src_path, width, level):
     # read file & use W/L Algorithm to convert color space
     src_file = pydicom.read_file(src_path)
     src = src_file.pixel_array
+    src = src.astype(np.int16)
+
     if width == 0:
         src = np.int8(src)
         return src
+    intercept = src_file.RescaleIntercept
+    slope = src_file.RescaleSlope
+    if slope != 1:
+        src = slope * src.astype(np.float64)
+        src = src.astype(np.int16)
+
+    src += np.int16(intercept)
+
     window_level = level
     window_width = width
     min_val = (2 * window_level - window_width) / 2.0 + 0.5
