@@ -19,7 +19,13 @@ def ConvertAllDCMs(file_path, width, level):
     names_with_gcs = os.listdir(file_path)
     for name in names_with_gcs:
         all_image_names = []
-        output_name = name[:12].replace(' ','_')
+        part = list(name.split(' '))
+        gcs_index = name.index("GCS")
+        part_name = name[gcs_index+3:]
+        end_index = part_name.index("分")
+        score = part_name[:end_index]
+        output_name = str(part[0]+" "+part[1]+" "+score).replace(' ','_')
+        print(output_name)
         # cd to dcm dir
         temp_path = file_path + "/" + name
         temp_names = os.listdir(temp_path)
@@ -90,7 +96,7 @@ def convert_dcm(src_path, width, level):
 if __name__ == '__main__':
     # Adding necessary input arguments
     parser = argparse.ArgumentParser(description="for test, written by Windbell")
-    parser.add_argument("--input_path", default="C:/Users/49804/Desktop/文章/大三/创新实践/预后不良/预后不良",
+    parser.add_argument("--input_path", default="C:/Users/49804/Desktop/文章/大三/创新实践/Prognosis-analysis-of-cerebral-hemorrhage/data/good",
                         help="the dir to (here)/patient_name_gcs_etc")
     parser.add_argument('-y', '--yaml', default=True, help="use yaml to load hyps")
     parser.add_argument("--window_level", type=int, default=50, help="the level in W/L algorithm in CT")
