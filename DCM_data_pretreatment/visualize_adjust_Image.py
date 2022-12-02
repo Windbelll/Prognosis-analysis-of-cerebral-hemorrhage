@@ -51,9 +51,9 @@ def run(file_path, yaml_path):
 
 if __name__ == "__main__":
     # Adding necessary input arguments
-    parser = argparse.ArgumentParser(description="for test, visualizer, written by Windbell")
-    parser.add_argument("--input_path", default="./sample/sample_dcm.dcm", help="test dcm file")
-    parser.add_argument("--output_yaml_path", default="./settings/test.yaml", help="test dcm file")
+    parser = argparse.ArgumentParser(description="for dataset, visualizer, written by Windbell")
+    parser.add_argument("--input_path", default="./sample/sample_dcm.dcm", help="dataset dcm file")
+    parser.add_argument("--output_yaml_path", default="./settings/dataset.yaml", help="dataset dcm file")
     args = parser.parse_args()
     print(args)
     run(args.input_path, args.output_yaml_path)

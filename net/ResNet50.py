@@ -78,14 +78,14 @@ class ResNet50(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = self.conv1(x)
-        out = self.max_pool(out)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        out = self.conv4(out)
-        out = self.conv5(out)
-        out = self.avg_pool(out)
-        out = out.reshape(x.shape[0], -1)
-        out = self.final(out)
-        return out
+        x = self.conv1(x)
+        x = self.max_pool(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.avg_pool(x)
+        x = torch.flatten(x, 1)
+        x = self.final(x)
+        return x
 

@@ -92,8 +92,8 @@ def run(file_path, mode, m_threshold):
 
 if __name__ == "__main__":
     # Adding necessary input arguments
-    parser = argparse.ArgumentParser(description="for test, written by Windbell")
-    parser.add_argument("--input_path", default="./output", help="test dcm file or the dir in ("
+    parser = argparse.ArgumentParser(description="for dataset, written by Windbell")
+    parser.add_argument("--input_path", default="./output", help="dataset dcm file or the dir in ("
                                                                                     "here)/patient_name ... etc")
     parser.add_argument("--as_dir", default=True, help="process all image in a dir")
     parser.add_argument("--threshold", default=60, help="the threshold to seg image")
