@@ -85,7 +85,79 @@ class ResNet50(nn.Module):
         x = self.conv4(x)
         x = self.conv5(x)
         x = self.avg_pool(x)
-        x = torch.flatten(x, 1)
+        x = x.reshape(x.shape[0], -1)
         x = self.final(x)
         return x
 
+
+# BasicBlock for ResNet18
+class BasicBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, strides, padding=[1, 1], change_channels=False) -> None:
+        super(BasicBlock, self).__init__()
+        self.basicBlock = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=(3, 3), stride=strides[0], padding=padding,
+                      bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=(3, 3), stride=strides[1], padding=padding,
+                      bias=False),
+            nn.BatchNorm2d(out_channels)
+        )
+
+        # shortcut
+        self.shortcut = nn.Sequential()
+        # for each ConvBlock(build by ResBlocks), first ResBlock should change source(x) channels to shortcut
+        if change_channels and strides[0] != [1, 1]:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=(1, 1), stride=strides[0], bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
+
+    def forward(self, x):
+        out = self.basicBlock(x)
+        out += self.shortcut(x)
+        out = func.relu(out)
+        return out
+
+
+class ResNet18(nn.Module):
+    def __init__(self, BasicBlock, num_classes=2) -> None:
+        super(ResNet18, self).__init__()
+        # conv1
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding=3, bias=False),
+            nn.BatchNorm2d(64)
+        )
+        # max_pooling
+        self.max_pool = nn.Sequential(
+            nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2), padding=1)
+        )
+        self.temp_channels = 64
+
+        self.conv2 = self._generate_network_layers(BasicBlock, 64, strides=[[1, 1], [1, 1]])
+        self.conv3 = self._generate_network_layers(BasicBlock, 128, strides=[[2, 1], [1, 1]])
+        self.conv4 = self._generate_network_layers(BasicBlock, 256, strides=[[2, 1], [1, 1]])
+        self.conv5 = self._generate_network_layers(BasicBlock, 512, strides=[[2, 1], [1, 1]])
+        # average_pooling
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.final = nn.Linear(512, num_classes)
+
+    def _generate_network_layers(self, BasicBlock, out_channels, strides):
+        layers = [BasicBlock(self.temp_channels, out_channels, strides[0], change_channels=True)]
+        # first BasicBlock should change channels
+        self.temp_channels = out_channels
+        layers.append(BasicBlock(self.temp_channels, out_channels, strides[1], change_channels=False))
+        self.temp_channels = out_channels
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.max_pool(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.avg_pool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = self.final(x)
+        return x

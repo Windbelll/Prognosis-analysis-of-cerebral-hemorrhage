@@ -45,24 +45,32 @@ def load_dataset():
     os.mkdir("../dataset/train/good")
     for item in train:
         item_list = item.split(" ")
-        img = imread(item_list[0] + "/10.png")
-        imwrite("../dataset/train/" + item_list[0] + ".png", img)
+        nums = len(os.listdir(item_list[0]))
+        for i in range(5):
+            img = imread(item_list[0] + "/%d.png" % (int(nums / 2) + (2 - i)))
+            imwrite("../dataset/train/" + item_list[0] + "-%d.png" % i, img)
+
     val = open("./val.txt", 'r')
     os.mkdir("../dataset/val")
     os.mkdir("../dataset/val/bad")
     os.mkdir("../dataset/val/good")
     for item in val:
         item_list = item.split(" ")
-        img = imread(item_list[0] + "/10.png")
-        imwrite("../dataset/val/" + item_list[0] + ".png", img)
+        nums = len(os.listdir(item_list[0]))
+        for i in range(5):
+            img = imread(item_list[0] + "/%d.png" % (int(nums / 2) + (2 - i)))
+            imwrite("../dataset/val/" + item_list[0] + "-%d.png" % i, img)
+
     test = open("./test.txt", 'r')
     os.mkdir("../dataset/test")
     os.mkdir("../dataset/test/bad")
     os.mkdir("../dataset/test/good")
     for item in test:
         item_list = item.split(" ")
-        img = imread(item_list[0] + "/10.png")
-        imwrite("../dataset/test/" + item_list[0] + ".png", img)
+        nums = len(os.listdir(item_list[0]))
+        for i in range(5):
+            img = imread(item_list[0] + "/%d.png" % (int(nums / 2) + (2 - i)))
+            imwrite("../dataset/test/" + item_list[0] + "-%d.png" % i, img)
 
 
 if __name__ == "__main__":
