@@ -44,7 +44,7 @@ def prepare_to_train(new_model, load_dict_path, dataset_dir, batch_size, epochs,
     print("test out")
     last = run(net=net, device=device, epochs=epochs, train_loader=train_loader, val_loader=val_loader,
                optimizer=optimizer, loss_func=loss_func, train_c=len(train_data), val_c=len(val_data))
-    torch.save(net, "./logs/last.pth")
+    torch.save(last, "./logs/last.pth")
 
 
 if __name__ == "__main__":
