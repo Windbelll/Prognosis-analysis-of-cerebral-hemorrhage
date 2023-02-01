@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from preprocess_format_convert import convert_dcm
 
+
 def SkullDivision(src_image, m_threshold, temp=None):
     """
     the function to Detach the skull for single image
@@ -17,7 +18,7 @@ def SkullDivision(src_image, m_threshold, temp=None):
     src_img = np.array(src_image, copy=True)
     _, img = cv2.threshold(src_img, m_threshold, 255, cv2.THRESH_BINARY)
     # cv2.imshow("temp_grey", img)
-    cv2.morphologyEx(img, cv2.MORPH_OPEN, (5, 5), dst=img, iterations=1)
+    # cv2.morphologyEx(img, cv2.MORPH_OPEN, (3, 3), dst=img, iterations=5)
     # cv2.imshow("temp_morph", img)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(img)
     object_index = 0
@@ -33,27 +34,50 @@ def SkullDivision(src_image, m_threshold, temp=None):
 
     img[labels != object_index] = 0
     img[labels == object_index] = 255
-    # cv2.imshow("temp_choose", img)
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
+    cv2.imshow("temp_choose", img)
+
+    # contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    # cv2.fillPoly(img, contours[object_index], 255)
+    _, img_2 = cv2.threshold(src_img, 230, 255, cv2.THRESH_BINARY)
+    cv2.imshow("th2", img_2)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(img_2)
+    object_index = 0
+    min = 999
+    for i in range(1, len(centroids)):
+        if stats[i][4] <= 8000:
+            continue
+        distance = get_distance((centroids[i][0], centroids[i][1]), (256, 256))
+        if distance < min:
+            min = distance
+            object_index = i
+    img_2[labels != object_index] = 0
+    cv2.imshow("temp", img_2)
+    # cv2.fillPoly(img, contours[object_index], 255)
+    img[img_2 == 255] = 0
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(img)
     object_index = 0
     max_area = 0
-    for i in range(1, len(contours)):
-        area = cv2.contourArea(contours[i])
-        if area > max_area:
-            max_area = area
+    # print(stats)
+    for i in range(1, len(stats)):
+        # distance = get_distance((centroids[i][0], centroids[i][1]), (256, 256))
+        if stats[i][4] > max_area:
+            max_area = stats[i][4]
             object_index = i
+        else:
+            continue
 
-    # cv2.fillPoly(img, contours[object_index], 255)
-
+    img[labels != object_index] = 0
+    img[labels == object_index] = 255
     # dst = np.zeros((src_image.shape[0], src_image.shape[1], 1), np.uint8)
-    dst = temp.copy()
+    dst = src_img.copy()
     # ex = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
     # if object_index != 0:
     #     cv2.drawContours(ex, contours, object_index, (0, 255, 255), 2)
     # # cv2.imshow("111", ex)
 
     dst[img != 255] = 0
+
     return dst
 
 
@@ -93,7 +117,7 @@ def run(file_path, mode, m_threshold):
                 # source_path = "../data/good/" + patient_name + "/" + data
                 src = cv2.imread(path, cv2.CV_8UC1)
                 # temp = cv2.imread(source_path, cv2.CV_8UC1)
-                dst = SkullDivision(src, m_threshold, temp)
+                dst = SkullDivision(src, m_threshold)
                 cv2.imwrite("./output_skull/" + patient_name + "/" + data, dst)
                 print("process: " + patient_name + "(%d/%d)" % (index, total),
                       "(%.2fms)" % ((time.perf_counter() - start_time) * 1000))
@@ -103,12 +127,12 @@ def run(file_path, mode, m_threshold):
 if __name__ == "__main__":
     # Adding necessary input arguments
     parser = argparse.ArgumentParser(description="for dataset, written by Windbell")
-    parser.add_argument("--input_path", default="./output", help="dataset dcm file or the dir in ("
-                                                                                    "here)/patient_name ... etc")
+    parser.add_argument("--input_path", default="../data/goodnewsrc", help="dataset png file or the dir in ("
+                                                                    "here)/patient_name ... etc")
     parser.add_argument("--as_dir", default=True, help="process all image in a dir")
-    parser.add_argument("--threshold", default=60, help="the threshold to seg image")
-    parser.add_argument('-y', '--yaml', default=True, help="use yaml to load hyps")
-    parser.add_argument('--yaml_path', default="settings/test.yaml", help="yaml file")
+    parser.add_argument("--threshold", default=50, help="the threshold to seg image")
+    parser.add_argument('-y', '--yaml', default=False, help="use yaml to load hyps")
+    parser.add_argument('--yaml_path', default="settings/normal.yaml", help="yaml file")
     args = parser.parse_args()
     print(args)
     if args.as_dir:

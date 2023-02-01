@@ -1,5 +1,6 @@
 import argparse
 
+import cv2
 import pydicom
 import os
 import numpy as np
@@ -21,10 +22,10 @@ def ConvertAllDCMs(file_path, width, level):
         all_image_names = []
         part = list(name.split(' '))
         gcs_index = name.index("GCS")
-        part_name = name[gcs_index+3:]
+        part_name = name[gcs_index + 3:]
         end_index = part_name.index("分")
         score = part_name[:end_index]
-        output_name = str(part[0]+" "+part[1]+" "+score).replace(' ','_')
+        output_name = str(part[0] + " " + part[1] + " " + score).replace(' ', '_')
         print(output_name)
         # cd to dcm dir
         temp_path = file_path + "/" + name
@@ -70,27 +71,39 @@ def convert_dcm(src_path, width, level):
     """
     # read file & use W/L Algorithm to convert color space
     src_file = pydicom.read_file(src_path)
-    src = src_file.pixel_array
-    src = src.astype(np.int16)
+    # src = src_file.pixel_array
+    # src = src.astype(np.int16)
 
-    if width == 0:
-        src = np.int8(src)
-        return src
+    # if width == 0:
+    #     src = np.int8(src)
+    #     return src
     intercept = src_file.RescaleIntercept
     slope = src_file.RescaleSlope
-    if slope != 1:
-        src = slope * src.astype(np.float64)
-        src = src.astype(np.int16)
-
-    src += np.int16(intercept)
-
+    # if slope != 1:
+    #     src = slope * src.astype(np.float64)
+    #     src = src.astype(np.int16)
+    #
+    src = src_file.pixel_array * slope + intercept
+    # print(src_file)
     window_level = level
     window_width = width
-    min_val = (2 * window_level - window_width) / 2.0 + 0.5
-    max_val = (2 * window_level + window_width) / 2.0 + 0.5
-    dst_image = (src - min_val) * 255.0 / float(max_val - min_val)
+    min_val = (window_level - window_width) / 2.0  # min_val = (2 * window_level - window_width) / 2.0 + 0.5
+    max_val = (window_level + window_width) / 2.0  # max_val = (2 * window_level + window_width) / 2.0 + 0.5
+    # dst_image = ((src - min_val) * 255.0) / float(max_val - min_val)
+    # dst_image = np.uint8(dst_image)
+    dst_image = np.clip(src, min_val, max_val)
+    dst_image = to255(dst_image)
+    # dst_image [dst_image > 230] = 0
     dst_image = np.uint8(dst_image)
     return dst_image
+
+
+def to255(img):     # 归一化到0-255代码
+    min_val = img.min()
+    max_val = img.max()
+    img = (img - min_val) / (max_val - min_val + 1e-5)  # 图像归一化
+    img = img * 255  # *255
+    return img
 
 
 if __name__ == '__main__':
@@ -98,9 +111,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="for dataset, written by Windbell")
     parser.add_argument("--input_path", default="C:/Users/49804/Desktop/文章/大三/创新实践/data/gooddd",
                         help="the dir to (here)/patient_name_gcs_etc")
-    parser.add_argument('-y', '--yaml', default=True, help="use yaml to load hyps")
-    parser.add_argument("--window_level", type=int, default=50, help="the level in W/L algorithm in CT")
-    parser.add_argument("--window_width", type=int, default=100, help="the width in W/L algorithm in CT")
+    parser.add_argument('-y', '--yaml', default=False, help="use yaml to load hyps")
+    parser.add_argument("--window_level", type=int, default=35, help="the level in W/L algorithm in CT")
+    parser.add_argument("--window_width", type=int, default=80, help="the width in W/L algorithm in CT")
     parser.add_argument('--yaml_path', default="settings/test.yaml", help="yaml file")
     args = parser.parse_args()
     print(args)
