@@ -1,4 +1,6 @@
 import math
+
+import numpy
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
@@ -397,6 +399,41 @@ class DenseNet(torch.nn.Module):
         return x
 
 
+class Test(nn.Module):
+    def __init__(self, gcs, with_gcs=True):
+        super(Test, self).__init__()
+        self.gcs = torch.load("../test/best_every_gcs.pth")
+        self.attn = torch.load("../test/best_every_attn.pth")
+        self.dns = torch.load("../test/best_every_dns.pth")
+        self.res = torch.load("../test/best_every_res.pth")
+        self.with_gcs = with_gcs
+        gcs_step = gcs
+        gcs_np = []
+        for i in range(15):
+            gcs_step -= 1
+            if gcs_step >= 0:
+                gcs_np.append(1)
+            else:
+                gcs_np.append(0)
+        self.gcs_tensor = torch.FloatTensor(numpy.array(gcs_np))
+        self.gcs_tensor = self.gcs_tensor.cuda()
+        self.gcs_tensor = torch.unsqueeze(self.gcs_tensor, dim=0)
+
+    def forward(self, x):
+        global_feature = self.res(x)
+        if self.with_gcs:
+            gcs_feature = self.gcs(self.gcs_tensor)
+            print(global_feature.shape)
+            print(gcs_feature.shape)
+            global_feature = torch.cat([global_feature, gcs_feature], dim=1)
+            global_feature = torch.unsqueeze(global_feature, 1)
+            global_feature = self.attn(global_feature)
+        else:
+            global_feature = torch.unsqueeze(global_feature, 1)
+
+        return self.dns(global_feature)
+
+
 # run to generate global summary
 if __name__ == '__main__':
     input = torch.randn(size=(1, 1, 224))
@@ -404,7 +441,10 @@ if __name__ == '__main__':
     output = denseNet(input)
     print(output.shape)
     torchsummary.summary(GCS_net(), (1, 15), device='cpu')
-    torchsummary.summary(ResNet50(ResBlock), (3, 512, 512), device='cpu')
+    torchsummary.summary(IMG_net(), (3, 512, 512), device='cpu')
     torchsummary.summary(SelfAttention(16, 192, 192, 0), (1, 192), device='cpu')
     torchsummary.summary(denseNet, (1, 192), device='cpu')
+    a = IMG_net()
+    print(a.BackBone)
+
 

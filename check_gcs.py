@@ -1,15 +1,13 @@
 import argparse
 
 import torch.utils.data
-import torchvision
-from torchvision.transforms import transforms
+
 from data.data_to_dataset import gcs_dataset
+from net.net_apis import run_gcs
 from net.net_archs import *
-from net.net_apis import run, val_without_info, run_gcs
 
 
-def prepare_to_train(new_model, load_dict_path, dataset_dir, batch_size, epochs, learning_rate, use_gpu,
-                     use_transforms, with_gcs):
+def prepare_to_train(batch_size, epochs, learning_rate, use_gpu, with_gcs):
     if with_gcs:
         img_net = IMG_net()
         gcs_net = GCS_net()
@@ -59,21 +57,15 @@ def prepare_to_train(new_model, load_dict_path, dataset_dir, batch_size, epochs,
 if __name__ == "__main__":
     # Adding necessary input arguments
     parser = argparse.ArgumentParser(description="add arguments to training")
-    parser.add_argument("--new_model", default=True, help="program will create a new model if True", type=bool)
-    parser.add_argument("--load_dict_path", default="D:/A-exps-logs/src_res50_epoch300_lr0.0001/best_every.pth",
-                        help="the path of old model")
-    parser.add_argument("--dataset_dir", default="./dataset", help="the path of dataset which should be (here)/train..")
-    parser.add_argument("--batch_size", default=2, help="the batch_size of training")
-    parser.add_argument("--epochs", default=100, help="the epochs of training", type=int)
+    parser.add_argument("--batch_size", default=32, help="the batch_size of training")
+    parser.add_argument("--epochs", default=300, help="the epochs of training", type=int)
     parser.add_argument("--use_gpu", default=True, help="device choice, if cuda isn't available program will warn",
                         type=bool)
     parser.add_argument("--learning_rate", default=0.0001, help="learning_rate", type=float)
-    parser.add_argument("--use_transforms", default=True, help="using transform to normalize data", type=bool)
-    parser.add_argument("--with_gcs", default=False, help="using gcs feature", type=bool)
+    parser.add_argument("--with_gcs", default=True, help="using gcs feature", type=bool)
 
     args = parser.parse_args()
     print(args)
 
-    prepare_to_train(new_model=args.new_model, load_dict_path=args.load_dict_path, dataset_dir=args.dataset_dir,
-                     batch_size=int(args.batch_size), epochs=args.epochs, learning_rate=args.learning_rate,
-                     use_gpu=args.use_gpu, use_transforms=args.use_transforms, with_gcs=args.with_gcs)
+    prepare_to_train(batch_size=int(args.batch_size), epochs=args.epochs, learning_rate=args.learning_rate,
+                     use_gpu=args.use_gpu,  with_gcs=args.with_gcs)
