@@ -182,7 +182,7 @@ class IMG_net(nn.Module):
         add_block += [nn.ReLU(True)]
         add_block += [nn.Dropout(0.15)]
         add_block += [nn.Linear(512, 128)]
-
+        # add_block += [nn.Linear(128, 2)]
         add_block = nn.Sequential(*add_block)
         self.BackBone = BackBone
         self.add_block = add_block
@@ -373,7 +373,7 @@ class DenseNet(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Dropout(0.5),
             torch.nn.Linear(self.feature_channel_num // 2, classes),
-
+            torch.nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -400,12 +400,21 @@ class DenseNet(torch.nn.Module):
 
 
 class Test(nn.Module):
-    def __init__(self, gcs, with_gcs=True):
+    def __init__(self, gcs, select, with_gcs=True):
         super(Test, self).__init__()
-        self.gcs = torch.load("../test/best_every_gcs.pth")
-        self.attn = torch.load("../test/best_every_attn.pth")
-        self.dns = torch.load("../test/best_every_dns.pth")
-        self.res = torch.load("../test/best_every_res.pth")
+        if with_gcs and select == 5:
+            self.gcs = torch.load("test/gcs/5/best_every_gcs.pth")
+            self.attn = torch.load("test/gcs/5/best_every_attn.pth")
+            self.dns = torch.load("test/gcs/5/best_every_dns.pth")
+            self.res = torch.load("test/gcs/5/best_every_res.pth")
+        elif with_gcs and select == 10:
+            self.gcs = torch.load("test/gcs/10/best_every_gcs.pth")
+            self.attn = torch.load("test/gcs/10/best_every_attn.pth")
+            self.dns = torch.load("test/gcs/10/best_every_dns.pth")
+            self.res = torch.load("test/gcs/10/best_every_res.pth")
+        else:
+            self.dns = torch.load("test/best_every_dns.pth")
+            self.res = torch.load("test/best_every_res.pth")
         self.with_gcs = with_gcs
         gcs_step = gcs
         gcs_np = []
@@ -418,13 +427,14 @@ class Test(nn.Module):
         self.gcs_tensor = torch.FloatTensor(numpy.array(gcs_np))
         self.gcs_tensor = self.gcs_tensor.cuda()
         self.gcs_tensor = torch.unsqueeze(self.gcs_tensor, dim=0)
+        # print("generate model done")
 
     def forward(self, x):
         global_feature = self.res(x)
         if self.with_gcs:
             gcs_feature = self.gcs(self.gcs_tensor)
-            print(global_feature.shape)
-            print(gcs_feature.shape)
+            # print(global_feature.shape)
+            # print(gcs_feature.shape)
             global_feature = torch.cat([global_feature, gcs_feature], dim=1)
             global_feature = torch.unsqueeze(global_feature, 1)
             global_feature = self.attn(global_feature)
@@ -444,7 +454,3 @@ if __name__ == '__main__':
     torchsummary.summary(IMG_net(), (3, 512, 512), device='cpu')
     torchsummary.summary(SelfAttention(16, 192, 192, 0), (1, 192), device='cpu')
     torchsummary.summary(denseNet, (1, 192), device='cpu')
-    a = IMG_net()
-    print(a.BackBone)
-
-

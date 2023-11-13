@@ -2,7 +2,7 @@ import argparse
 
 import torch.utils.data
 
-from data.data_to_dataset import gcs_dataset
+from data.dataset import gcs_dataset
 from net.net_apis import run_gcs
 from net.net_archs import *
 
@@ -28,12 +28,12 @@ def prepare_to_train(batch_size, epochs, learning_rate, use_gpu, with_gcs):
         self_attn = None
         params = [p for p in img_net.parameters() if p.requires_grad]
         print("step1: " + str(len(params)))
-        params += [p for p in classify_head.parameters() if p.requires_grad]
-        print("step3: " + str(len(params)))
+        # params += [p for p in classify_head.parameters() if p.requires_grad]
+        # print("step3: " + str(len(params)))
     # print(img_net)
     train_set = gcs_dataset("data/train.txt")
     val_set = gcs_dataset("data/val.txt")
-    # val_set += gcs_dataset("data/test.txt")
+    val_set += gcs_dataset("data/test.txt")
 
     train_loader = torch.utils.data.DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(dataset=val_set, batch_size=batch_size)
@@ -57,7 +57,7 @@ def prepare_to_train(batch_size, epochs, learning_rate, use_gpu, with_gcs):
 if __name__ == "__main__":
     # Adding necessary input arguments
     parser = argparse.ArgumentParser(description="add arguments to training")
-    parser.add_argument("--batch_size", default=32, help="the batch_size of training")
+    parser.add_argument("--batch_size", default=4, help="the batch_size of training")
     parser.add_argument("--epochs", default=300, help="the epochs of training", type=int)
     parser.add_argument("--use_gpu", default=True, help="device choice, if cuda isn't available program will warn",
                         type=bool)
